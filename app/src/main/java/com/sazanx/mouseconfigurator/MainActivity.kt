@@ -248,16 +248,18 @@ class MainActivity : Activity() {
         val tv = TextView(this).apply { setTextColor(Color.WHITE); textSize = 14f }
         val sb = SeekBar(this).apply { max = 1000 }
         
-        fun update(v: Int) {
-            val x = min + (max - min) * (v / 1000f)
-            tv.text = "$label  ${String.format(Locale.US, "%.2f", x)}"
-            change(x)
+        fun updateProgress(progressValue: Int) {
+            val floatVal = min + (max - min) * (progressValue / 1000f)
+            tv.text = "$label  ${String.format(Locale.US, "%.2f", floatVal)}"
+            change(floatVal)
         }
         
         val initialProgress = ((initial - min) / (max - min) * 1000f).toInt().coerceIn(0, 1000)
         sb.progress = initialProgress
         sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: SeekBar?, v: Int, fromUser: Boolean) { if (fromUser) update(v) }
+            override fun onProgressChanged(s: SeekBar?, v: Int, fromUser: Boolean) { 
+                if (fromUser) updateProgress(v) 
+            }
             override fun onStartTrackingTouch(s: SeekBar?) {}
             override fun onStopTrackingTouch(s: SeekBar?) {}
         })

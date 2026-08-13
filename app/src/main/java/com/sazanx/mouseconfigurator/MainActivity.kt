@@ -244,24 +244,24 @@ class MainActivity : Activity() {
         })
     }
 
-    private fun addSeek(p: LinearLayout, label: String, min: Float, max: Float, initial: Float, change: (Float) -> Unit) {
+    private fun addSeek(p: LinearLayout, label: String, minVal: Float, maxVal: Float, initial: Float, change: (Float) -> Unit) {
         val tv = TextView(this).apply { setTextColor(Color.WHITE); textSize = 14f }
         val sb = SeekBar(this).apply { max = 1000 }
         
         fun updateProgress(progressValue: Int) {
-            val floatVal = min + (max - min) * (progressValue / 1000f)
-            tv.text = "$label  ${String.format(Locale.US, "%.2f", floatVal)}"
-            change(floatVal)
+            val calculatedValue = minVal + (maxVal - minVal) * (progressValue / 1000f)
+            tv.text = "$label  ${String.format(Locale.US, "%.2f", calculatedValue)}"
+            change(calculatedValue)
         }
         
-        val initialProgress = ((initial - min) / (max - min) * 1000f).toInt().coerceIn(0, 1000)
+        val initialProgress = ((initial - minVal) / (maxVal - minVal) * 1000f).toInt().coerceIn(0, 1000)
         sb.progress = initialProgress
         sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: SeekBar?, v: Int, fromUser: Boolean) { 
-                if (fromUser) updateProgress(v) 
+            override fun onProgressChanged(seekBarWidget: SeekBar?, progressVal: Int, fromUser: Boolean) { 
+                if (fromUser) updateProgress(progressVal) 
             }
-            override fun onStartTrackingTouch(s: SeekBar?) {}
-            override fun onStopTrackingTouch(s: SeekBar?) {}
+            override fun onStartTrackingTouch(seekBarWidget: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBarWidget: SeekBar?) {}
         })
         tv.text = "$label  ${String.format(Locale.US, "%.2f", initial)}"
         p.addView(tv)

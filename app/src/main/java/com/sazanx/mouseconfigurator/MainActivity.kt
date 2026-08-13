@@ -172,9 +172,13 @@ class MainActivity : Activity() {
 
         fun devicePage() = show {
             addHeader(body, "Connected Input Devices")
-            InputDevice.getDeviceIds().mapNotNull { InputDevice.getDevice(it) }
-                .filter { (it.sources and (InputDevice.SOURCE_MOUSE or InputDevice.SOURCE_KEYBOARD)) != 0 }
-                .forEach { dev -> addText(body, "${dev.name} (ID ${dev.id}) • sources 0x${Integer.toHexString(dev.sources)}") }
+            val deviceIds = InputDevice.getDeviceIds()
+            for (id in deviceIds) {
+                val dev = InputDevice.getDevice(id)
+                if (dev != null && (dev.sources and (InputDevice.SOURCE_MOUSE or InputDevice.SOURCE_KEYBOARD)) != 0) {
+                    addText(body, "${dev.name} (ID ${dev.id}) • sources 0x${Integer.toHexString(dev.sources)}")
+                }
+            }
             
             addHeader(body, "Shizuku")
             addText(body, shizuku.statusText())
@@ -250,7 +254,8 @@ class MainActivity : Activity() {
             change(x)
         }
         
-        sb.progress = ((initial - min) / (max - min) * 1000).toInt().coerceIn(0, 1000)
+        val initialProgress = ((initial - min) / (max - min) * 1000f).toInt().coerceIn(0, 1000)
+        sb.progress = initialProgress
         sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar?, v: Int, fromUser: Boolean) { if (fromUser) update(v) }
             override fun onStartTrackingTouch(s: SeekBar?) {}

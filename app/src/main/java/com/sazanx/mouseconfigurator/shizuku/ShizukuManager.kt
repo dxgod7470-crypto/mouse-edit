@@ -4,23 +4,37 @@ import android.content.pm.PackageManager
 import rikka.shizuku.Shizuku
 
 class ShizukuManager {
-    companion object { const val PERMISSION_CODE = 1004 }
-
-    fun isRunning(): Boolean = try { Shizuku.pingBinder() } catch (_: Throwable) { false }
-
-    fun hasPermission(): Boolean = try {
-        isRunning() && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-    } catch (_: Throwable) { false }
-
-    fun requestPermission() {
-        if (isRunning() && !hasPermission()) {
-            Shizuku.requestPermission(PERMISSION_CODE)
+    fun isRunning(): Boolean {
+        return try {
+            Shizuku.pingBinder()
+        } catch (e: Exception) {
+            false
         }
     }
 
-    fun statusText(): String = when {
-        !isRunning() -> "Shizuku: not running"
-        hasPermission() -> "Shizuku: running • granted"
-        else -> "Shizuku: running • permission required"
+    fun hasPermission(): Boolean {
+        return if (isRunning()) {
+            try {
+                Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+            } catch (e: Exception) {
+                false
+            }
+        } else false
+    }
+
+    fun requestPermission() {
+        if (isRunning()) {
+            try {
+                Shizuku.requestPermission(0)
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun statusText(): String {
+        return when {
+            !isRunning() -> "Shizuku Service: Not Running"
+            !hasPermission() -> "Shizuku Service: Running (Permission Required)"
+            else -> "Shizuku Service: Authorized & Ready"
+        }
     }
 }

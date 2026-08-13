@@ -1,39 +1,24 @@
 package com.sazanx.mouseconfigurator.input
 
 class InputEventStats {
-    private var windowStartNs = 0L
-    private var windowEvents = 0
-    private var totalEvents = 0L
-    private var lastEventNs = 0L
+    private var eventCount = 0L
+    private var lastTimeNs = System.nanoTime()
+    private var currentHz = 0.0
+
+    data class Snapshot(val totalEvents: Long, val hz: Double)
 
     @Synchronized
-    fun record(nowNs: Long = System.nanoTime()): Snapshot {
-        if (windowStartNs == 0L) windowStartNs = nowNs
-        windowEvents++
-        totalEvents++
-        val intervalMs = if (lastEventNs == 0L) 0.0 else (nowNs - lastEventNs) / 1_000_000.0
-        lastEventNs = nowNs
-
-        val elapsed = nowNs - windowStartNs
-        val hz = if (elapsed >= 1_000_000_000L) {
-            val value = windowEvents * 1_000_000_000.0 / elapsed
-            windowEvents = 0
-            windowStartNs = nowNs
-            value
-        } else 0.0
-        return Snapshot(totalEvents, intervalMs, hz)
+    fun record(nowNs: Long): Snapshot {
+        eventCount++
+        val elapsed = (nowNs - lastTimeNs) / 1_000_000_000.0
+        if (elapsed >= 1.0) {
+            currentHz = eventCount / elapsed
+            eventCount = 0
+            lastTimeNs = nowNs
+        }
+        return Snapshot(eventCount, currentHz)
     }
 
     @Synchronized
-    fun snapshot(): Snapshot = Snapshot(totalEvents, 0.0, 0.0)
-
-    @Synchronized
-    fun reset() {
-        windowStartNs = 0L
-        windowEvents = 0
-        totalEvents = 0L
-        lastEventNs = 0L
-    }
-
-    data class Snapshot(val totalEvents: Long, val intervalMs: Double, val hz: Double)
+    fun snapshot(): Snapshot = Snapshot(eventCount, currentHz)
 }

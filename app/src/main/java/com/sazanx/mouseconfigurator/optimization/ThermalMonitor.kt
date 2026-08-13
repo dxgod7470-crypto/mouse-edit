@@ -1,11 +1,12 @@
 package com.sazanx.mouseconfigurator.optimization
 
+import android.os.Build
 import android.os.PowerManager
 
 class ThermalMonitor(private val powerManager: PowerManager?) {
     fun status(): String {
-        return if (powerManager != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            when (powerManager.thermalStatus) {
+        return if (powerManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            when (powerManager.currentThermalStatus) {
                 PowerManager.THERMAL_STATUS_NONE -> "Normal"
                 PowerManager.THERMAL_STATUS_LIGHT -> "Light Throttling"
                 PowerManager.THERMAL_STATUS_MODERATE -> "Moderate Throttling"

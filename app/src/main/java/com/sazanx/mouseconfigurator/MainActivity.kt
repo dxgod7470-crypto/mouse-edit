@@ -157,6 +157,7 @@ class MainActivity : Activity() {
         setContentView(root)
 
         fun show(page: () -> Unit) {
+            stopStatsTimer() // Clear running timers when changing tab pages
             body.removeAllViews()
             page()
         }
@@ -316,17 +317,26 @@ class MainActivity : Activity() {
             return
         }
         val intent = Intent(this, MouseStabilizerService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+            Toast.makeText(this, "Input pipeline started.", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Failed to start service: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
-        Toast.makeText(this, "Input pipeline started.", Toast.LENGTH_SHORT).show()
     }
 
     private fun stopMouseService() {
-        stopService(Intent(this, MouseStabilizerService::class.java))
-        Toast.makeText(this, "Service stopped.", Toast.LENGTH_SHORT).show()
+        try {
+            stopService(Intent(this, MouseStabilizerService::class.java))
+            Toast.makeText(this, "Service stopped.", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun dispatchGenericMotionEvent(e: MotionEvent): Boolean {
@@ -381,4 +391,3 @@ class MainActivity : Activity() {
         statsTimer = null
     }
 }
-

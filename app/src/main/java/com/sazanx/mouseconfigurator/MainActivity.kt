@@ -1,6 +1,7 @@
 package com.sazanx.mouseconfigurator
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -30,6 +31,8 @@ import com.sazanx.mouseconfigurator.optimization.ResourceMonitor
 import com.sazanx.mouseconfigurator.optimization.ThermalMonitor
 import com.sazanx.mouseconfigurator.service.MouseStabilizerService
 import com.sazanx.mouseconfigurator.shizuku.ShizukuManager
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.util.Locale
 
 class MainActivity : Activity() {
@@ -52,8 +55,33 @@ class MainActivity : Activity() {
     private val resourceMonitor by lazy { ResourceMonitor(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Intercept uncaught crashes and present them visually on-screen
+        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
+            showCrashDialog(throwable)
+        }
+
         super.onCreate(savedInstanceState)
-        buildUi()
+
+        try {
+            buildUi()
+        } catch (e: Throwable) {
+            showCrashDialog(e)
+        }
+    }
+
+    private fun showCrashDialog(t: Throwable) {
+        val sw = StringWriter()
+        t.printStackTrace(PrintWriter(sw))
+        val errorDetails = sw.toString()
+
+        mainHandler.post {
+            AlertDialog.Builder(this)
+                .setTitle("Application Error Caught")
+                .setMessage(errorDetails.take(1500))
+                .setPositiveButton("Dismiss") { _, _ -> finish() }
+                .setCancelable(false)
+                .show()
+        }
     }
 
     override fun onResume() {
@@ -353,3 +381,4 @@ class MainActivity : Activity() {
         statsTimer = null
     }
 }
+

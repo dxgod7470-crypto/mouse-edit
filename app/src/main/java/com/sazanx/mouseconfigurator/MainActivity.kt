@@ -66,14 +66,26 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        buildUi()
+        try {
+            buildUi()
+        } catch (e: Throwable) {
+            e.printStackTrace()
+
+            Toast.makeText(
+                this,
+                "Startup error: ${e.localizedMessage ?: "Unknown error"}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     override fun onResume() {
         super.onResume()
 
-        if (::status.isInitialized) {
+        try {
             updateShizukuStatus()
+        } catch (e: Throwable) {
+            e.printStackTrace()
         }
     }
 
@@ -116,17 +128,22 @@ class MainActivity : Activity() {
             )
         }
 
-        val title = TextView(this).apply {
-            text = "Mouse Configurator v5"
-            textSize = 25f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.WHITE)
-        }
-
-        root.addView(title)
+        root.addView(
+            TextView(this).apply {
+                text = "Mouse Configurator v5"
+                textSize = 25f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(Color.WHITE)
+            }
+        )
 
         status = TextView(this).apply {
-            text = "Checking Shizuku..."
+            text = try {
+                shizuku.statusText()
+            } catch (e: Throwable) {
+                "Shizuku status unavailable"
+            }
+
             textSize = 13f
             setTextColor(Color.LTGRAY)
         }
@@ -138,16 +155,14 @@ class MainActivity : Activity() {
             setPadding(0, 12, 0, 12)
         }
 
-        val startButton = Button(this).apply {
-            text = "START"
-
-            setOnClickListener {
-                startMouseService()
-            }
-        }
-
         controls.addView(
-            startButton,
+            Button(this).apply {
+                text = "START"
+
+                setOnClickListener {
+                    startMouseService()
+                }
+            },
             LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -155,16 +170,14 @@ class MainActivity : Activity() {
             )
         )
 
-        val stopButton = Button(this).apply {
-            text = "STOP"
-
-            setOnClickListener {
-                stopMouseService()
-            }
-        }
-
         controls.addView(
-            stopButton,
+            Button(this).apply {
+                text = "STOP"
+
+                setOnClickListener {
+                    stopMouseService()
+                }
+            },
             LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -174,9 +187,7 @@ class MainActivity : Activity() {
 
         root.addView(controls)
 
-        val tabs = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
+        val tabs = LinearLayout(this)
 
         val buttons = listOf(
             "PC SETTINGS",
@@ -193,14 +204,12 @@ class MainActivity : Activity() {
             addView(body)
         }
 
-        buttons.forEach { name ->
-
-            val button = Button(this).apply {
-                text = name
-            }
+        buttons.indices.forEach { i ->
 
             tabs.addView(
-                button,
+                Button(this).apply {
+                    text = buttons[i]
+                },
                 LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -231,7 +240,14 @@ class MainActivity : Activity() {
             try {
                 page()
             } catch (e: Throwable) {
-                addHeader(body, "Page error")
+
+                e.printStackTrace()
+
+                addHeader(
+                    body,
+                    "Page error"
+                )
+
                 addText(
                     body,
                     e.localizedMessage ?: "Unknown error"
@@ -324,7 +340,7 @@ class MainActivity : Activity() {
                 "Response curve"
             )
 
-            val radioGroup = RadioGroup(this)
+            val rg = RadioGroup(this)
 
             listOf(
                 "Linear",
@@ -333,28 +349,31 @@ class MainActivity : Activity() {
                 "Aggressive"
             ).forEach { name ->
 
-                val radio = RadioButton(this).apply {
+                rg.addView(
+                    RadioButton(this).apply {
 
-                    text = name
+                        text = name
 
-                    setTextColor(Color.WHITE)
-
-                    isChecked = name == cfg.curve
-
-                    setOnClickListener {
-
-                        cfg = cfg.copy(
-                            curve = name
+                        setTextColor(
+                            Color.WHITE
                         )
 
-                        pushConfig()
-                    }
-                }
+                        isChecked =
+                            name == cfg.curve
 
-                radioGroup.addView(radio)
+                        setOnClickListener {
+
+                            cfg = cfg.copy(
+                                curve = name
+                            )
+
+                            pushConfig()
+                        }
+                    }
+                )
             }
 
-            body.addView(radioGroup)
+            body.addView(rg)
 
             addSeek(
                 body,
@@ -396,10 +415,15 @@ class MainActivity : Activity() {
 
             log = TextView(this).apply {
 
-                text = "Waiting for mouse/keyboard..."
+                text =
+                    "Waiting for mouse/keyboard…"
 
                 setTextColor(
-                    Color.rgb(180, 220, 255)
+                    Color.rgb(
+                        180,
+                        220,
+                        255
+                    )
                 )
 
                 textSize = 12f
@@ -422,13 +446,13 @@ class MainActivity : Activity() {
 
                 for (id in deviceIds) {
 
-                    val device =
+                    val dev =
                         InputDevice.getDevice(id)
 
                     if (
-                        device != null &&
+                        dev != null &&
                         (
-                            device.sources and
+                            dev.sources and
                                 (
                                     InputDevice.SOURCE_MOUSE or
                                         InputDevice.SOURCE_KEYBOARD
@@ -438,14 +462,20 @@ class MainActivity : Activity() {
 
                         addText(
                             body,
-                            "${device.name} (ID ${device.id}) • sources 0x${
-                                Integer.toHexString(device.sources)
-                            }"
+                            "${dev.name} " +
+                                "(ID ${dev.id}) • " +
+                                "sources 0x${
+                                    Integer.toHexString(
+                                        dev.sources
+                                    )
+                                }"
                         )
                     }
                 }
 
             } catch (e: Throwable) {
+
+                e.printStackTrace()
 
                 addText(
                     body,
@@ -458,16 +488,13 @@ class MainActivity : Activity() {
                 "Shizuku"
             )
 
-            val shizukuStatus =
+            addText(
+                body,
                 try {
                     shizuku.statusText()
                 } catch (e: Throwable) {
                     "Shizuku unavailable"
                 }
-
-            addText(
-                body,
-                shizukuStatus
             )
 
             try {
@@ -480,7 +507,8 @@ class MainActivity : Activity() {
                     body.addView(
                         Button(this).apply {
 
-                            text = "Request Shizuku permission"
+                            text =
+                                "Request Shizuku permission"
 
                             setOnClickListener {
 
@@ -491,6 +519,8 @@ class MainActivity : Activity() {
                                     updateShizukuStatus()
 
                                 } catch (e: Throwable) {
+
+                                    e.printStackTrace()
 
                                     Toast.makeText(
                                         this@MainActivity,
@@ -504,7 +534,8 @@ class MainActivity : Activity() {
                 }
 
             } catch (e: Throwable) {
-                // Ignore Shizuku state errors on this page.
+
+                e.printStackTrace()
             }
         }
 
@@ -529,10 +560,13 @@ class MainActivity : Activity() {
             addText(
                 body,
                 "Service: ${
-                    if (manager?.isActive() == true)
+                    if (
+                        manager?.isActive() == true
+                    ) {
                         "active"
-                    else
+                    } else {
                         "stopped"
+                    }
                 }"
             )
 
@@ -540,7 +574,9 @@ class MainActivity : Activity() {
 
                 addText(
                     body,
-                    "Thermal: ${thermalMonitor.status()}"
+                    "Thermal: ${
+                        thermalMonitor.status()
+                    }"
                 )
 
             } catch (e: Throwable) {
@@ -555,7 +591,9 @@ class MainActivity : Activity() {
 
                 addText(
                     body,
-                    "Battery: ${batteryMonitor.percent()}%"
+                    "Battery: ${
+                        batteryMonitor.percent()
+                    }%"
                 )
 
             } catch (e: Throwable) {
@@ -573,8 +611,10 @@ class MainActivity : Activity() {
 
                 addText(
                     body,
-                    "App memory: ${mem.appMemoryMb} MB • " +
-                        "Available RAM: ${mem.availableMemoryMb} MB / " +
+                    "App memory: " +
+                        "${mem.appMemoryMb} MB • " +
+                        "Available RAM: " +
+                        "${mem.availableMemoryMb} MB / " +
                         "${mem.totalMemoryMb} MB"
                 )
 
@@ -616,7 +656,8 @@ class MainActivity : Activity() {
                 addText(
                     body,
                     "Input events: ${
-                        inputStats.snapshot().totalEvents
+                        inputStats.snapshot()
+                            .totalEvents
                     }"
                 )
 
@@ -655,25 +696,22 @@ class MainActivity : Activity() {
             startStatsTimer()
         }
 
-        val pages = listOf<() -> Unit>(
+        val pages = listOf(
             { configPage() },
             { testPage() },
             { devicePage() },
             { optimizationPage() }
         )
 
-        buttons.indices.forEach { index ->
+        buttons.indices.forEach { i ->
 
-            tabs.getChildAt(index)
+            tabs.getChildAt(i)
                 .setOnClickListener {
-
-                    pages[index].invoke()
+                    pages[i].invoke()
                 }
         }
 
         configPage()
-
-        updateShizukuStatus()
     }
 
     private fun pushConfig() {
@@ -685,6 +723,8 @@ class MainActivity : Activity() {
 
         } catch (e: Throwable) {
 
+            e.printStackTrace()
+
             Toast.makeText(
                 this,
                 "Unable to apply configuration",
@@ -694,21 +734,23 @@ class MainActivity : Activity() {
     }
 
     private fun addHeader(
-        parent: LinearLayout,
-        textValue: String
+        p: LinearLayout,
+        s: String
     ) {
 
-        parent.addView(
+        p.addView(
             TextView(this).apply {
 
-                text = textValue
+                text = s
 
                 textSize = 19f
 
                 typeface =
                     Typeface.DEFAULT_BOLD
 
-                setTextColor(Color.WHITE)
+                setTextColor(
+                    Color.WHITE
+                )
 
                 setPadding(
                     0,
@@ -721,16 +763,18 @@ class MainActivity : Activity() {
     }
 
     private fun addText(
-        parent: LinearLayout,
-        textValue: String
+        p: LinearLayout,
+        s: String
     ) {
 
-        parent.addView(
+        p.addView(
             TextView(this).apply {
 
-                text = textValue
+                text = s
 
-                setTextColor(Color.LTGRAY)
+                setTextColor(
+                    Color.LTGRAY
+                )
 
                 textSize = 13f
 
@@ -745,25 +789,26 @@ class MainActivity : Activity() {
     }
 
     private fun addSeek(
-        parent: LinearLayout,
+        p: LinearLayout,
         label: String,
-        minValue: Float,
-        maxValue: Float,
+        minVal: Float,
+        maxVal: Float,
         initial: Float,
         change: (Float) -> Unit
     ) {
 
-        val labelView =
+        val tv =
             TextView(this).apply {
 
-                setTextColor(Color.WHITE)
+                setTextColor(
+                    Color.WHITE
+                )
 
                 textSize = 14f
             }
 
-        val seekBar =
+        val sb =
             SeekBar(this).apply {
-
                 max = 1000
             }
 
@@ -772,11 +817,11 @@ class MainActivity : Activity() {
         ) {
 
             val calculatedValue =
-                minValue +
-                    (maxValue - minValue) *
+                minVal +
+                    (maxVal - minVal) *
                     (progressValue / 1000f)
 
-            labelView.text =
+            tv.text =
                 "$label  ${
                     String.format(
                         Locale.US,
@@ -790,42 +835,49 @@ class MainActivity : Activity() {
 
         val initialProgress =
             (
-                (initial - minValue) /
-                    (maxValue - minValue) *
+                (initial - minVal) /
+                    (maxVal - minVal) *
                     1000f
                 )
                 .toInt()
-                .coerceIn(0, 1000)
+                .coerceIn(
+                    0,
+                    1000
+                )
 
-        seekBar.progress =
+        sb.progress =
             initialProgress
 
-        seekBar.setOnSeekBarChangeListener(
+        sb.setOnSeekBarChangeListener(
             object :
                 SeekBar.OnSeekBarChangeListener {
 
                 override fun onProgressChanged(
                     seekBarWidget: SeekBar?,
-                    progressValue: Int,
+                    progressVal: Int,
                     fromUser: Boolean
                 ) {
 
                     if (fromUser) {
-                        updateProgress(progressValue)
+                        updateProgress(
+                            progressVal
+                        )
                     }
                 }
 
                 override fun onStartTrackingTouch(
                     seekBarWidget: SeekBar?
-                ) {}
+                ) {
+                }
 
                 override fun onStopTrackingTouch(
                     seekBarWidget: SeekBar?
-                ) {}
+                ) {
+                }
             }
         )
 
-        labelView.text =
+        tv.text =
             "$label  ${
                 String.format(
                     Locale.US,
@@ -834,21 +886,327 @@ class MainActivity : Activity() {
                 )
             }"
 
-        parent.addView(labelView)
-
-        parent.addView(seekBar)
+        p.addView(tv)
+        p.addView(sb)
     }
 
     private fun addSwitch(
-        parent: LinearLayout,
+        p: LinearLayout,
         label: String,
         initial: Boolean,
         change: (Boolean) -> Unit
     ) {
 
-        val switch =
+        p.addView(
             SwitchCompat(this).apply {
 
                 text = label
 
-                setTextC
+                setTextColor(
+                    Color.WHITE
+                )
+
+                isChecked = initial
+
+                setOnCheckedChangeListener {
+                        _,
+                        value ->
+                    change(value)
+                }
+            }
+        )
+    }
+
+    private fun startMouseService() {
+
+        try {
+
+            if (!shizuku.isRunning()) {
+
+                Toast.makeText(
+                    this,
+                    "Start Shizuku first.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return
+            }
+
+            if (!shizuku.hasPermission()) {
+
+                shizuku.requestPermission()
+
+                Toast.makeText(
+                    this,
+                    "Grant Shizuku permission, then press START again.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return
+            }
+
+            val intent =
+                Intent(
+                    this,
+                    MouseStabilizerService::class.java
+                )
+
+            if (
+                Build.VERSION.SDK_INT >=
+                Build.VERSION_CODES.O
+            ) {
+
+                startForegroundService(intent)
+
+            } else {
+
+                startService(intent)
+            }
+
+            Toast.makeText(
+                this,
+                "Input pipeline started.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+        } catch (e: Throwable) {
+
+            e.printStackTrace()
+
+            Toast.makeText(
+                this,
+                "Failed to start service: ${
+                    e.localizedMessage
+                }",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun stopMouseService() {
+
+        try {
+
+            stopService(
+                Intent(
+                    this,
+                    MouseStabilizerService::class.java
+                )
+            )
+
+            Toast.makeText(
+                this,
+                "Service stopped.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+        } catch (e: Throwable) {
+
+            e.printStackTrace()
+        }
+    }
+
+    override fun dispatchGenericMotionEvent(
+        e: MotionEvent
+    ): Boolean {
+
+        if (
+            (
+                e.source and
+                    InputDevice.SOURCE_MOUSE
+            ) ==
+            InputDevice.SOURCE_MOUSE
+        ) {
+
+            val now =
+                System.nanoTime()
+
+            val snap =
+                inputStats.record(now)
+
+            val rawX =
+                if (
+                    Build.VERSION.SDK_INT >=
+                    Build.VERSION_CODES.O
+                ) {
+
+                    e.getAxisValue(
+                        MotionEvent.AXIS_RELATIVE_X
+                    )
+
+                } else {
+
+                    e.getAxisValue(
+                        MotionEvent.AXIS_X
+                    )
+                }
+
+            val rawY =
+                if (
+                    Build.VERSION.SDK_INT >=
+                    Build.VERSION_CODES.O
+                ) {
+
+                    e.getAxisValue(
+                        MotionEvent.AXIS_RELATIVE_Y
+                    )
+
+                } else {
+
+                    e.getAxisValue(
+                        MotionEvent.AXIS_Y
+                    )
+                }
+
+            val wheel =
+                e.getAxisValue(
+                    MotionEvent.AXIS_VSCROLL
+                )
+
+            val dt =
+                if (lastNs == 0L) {
+                    0.0
+                } else {
+                    (
+                        now - lastNs
+                    ) / 1_000_000.0
+                }
+
+            lastNs = now
+
+            try {
+
+                MouseStabilizerService
+                    .instance
+                    ?.processAndInjectInput(
+                        rawX,
+                        rawY
+                    )
+
+            } catch (e: Throwable) {
+
+                e.printStackTrace()
+            }
+
+            if (::log.isInitialized) {
+
+                val hz =
+                    if (snap.hz > 0) {
+
+                        String.format(
+                            Locale.US,
+                            "%.0f Hz",
+                            snap.hz
+                        )
+
+                    } else {
+
+                        "measuring"
+                    }
+
+                log.text =
+                    "Raw dx=${
+                        String.format(
+                            Locale.US,
+                            "%.2f",
+                            rawX
+                        )
+                    } " +
+                    "dy=${
+                        String.format(
+                            Locale.US,
+                            "%.2f",
+                            rawY
+                        )
+                    } " +
+                    "wheel=${
+                        String.format(
+                            Locale.US,
+                            "%.2f",
+                            wheel
+                        )
+                    }\n" +
+                    "Δt=${
+                        String.format(
+                            Locale.US,
+                            "%.2f",
+                            dt
+                        )
+                    } ms • $hz\n\n" +
+                    log.text.take(2500)
+            }
+        }
+
+        return super.dispatchGenericMotionEvent(e)
+    }
+
+    override fun dispatchKeyEvent(
+        e: KeyEvent
+    ): Boolean {
+
+        if (
+            e.action ==
+            KeyEvent.ACTION_DOWN &&
+            ::log.isInitialized
+        ) {
+
+            val d =
+                InputDevice.getDevice(
+                    e.deviceId
+                )
+
+            log.text =
+                "KEY ${
+                    KeyEvent.keyCodeToString(
+                        e.keyCode
+                    )
+                } • ${
+                    d?.name ?: "Unknown"
+                }\n\n" +
+                log.text.take(2500)
+        }
+
+        return super.dispatchKeyEvent(e)
+    }
+
+    private fun startStatsTimer() {
+
+        stopStatsTimer()
+
+        val r =
+            object : Runnable {
+
+                override fun run() {
+
+                    if (
+                        ::status.isInitialized
+                    ) {
+                        updateShizukuStatus()
+                    }
+
+                    if (
+                        statsTimer === this
+                    ) {
+
+                        mainHandler.postDelayed(
+                            this,
+                            3000L
+                        )
+                    }
+                }
+            }
+
+        statsTimer = r
+
+        mainHandler.post(r)
+    }
+
+    private fun stopStatsTimer() {
+
+        statsTimer?.let {
+            mainHandler.removeCallbacks(it)
+        }
+
+        statsTimer = null
+    }
+}

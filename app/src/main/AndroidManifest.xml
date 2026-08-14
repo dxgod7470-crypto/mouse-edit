@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
 
-    <!-- Overlay / notifications -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -18,7 +16,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MouseConfigurator">
 
-        <!-- Shizuku -->
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
@@ -26,7 +23,6 @@
             android:enabled="true"
             android:exported="true" />
 
-        <!-- Main screen -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -38,19 +34,17 @@
 
         </activity>
 
-        <!-- Mouse processing foreground service -->
         <service
             android:name=".service.MouseStabilizerService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
 
-        <!-- Accessibility input service -->
         <service
             android:name=".MouseAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:enabled="true"
-            android:exported="false">
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
 
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Foreground Service Permissions for Android 9 to 15 -->
+    <!-- Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    
-    <!-- System & Notification Permissions -->
+
+    <!-- Overlay / notifications -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -16,9 +16,9 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:label="Mouse Configurator"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        android:theme="@style/Theme.MouseConfigurator">
 
-        <!-- Shizuku Provider Registration -->
+        <!-- Shizuku -->
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
@@ -26,16 +26,19 @@
             android:enabled="true"
             android:exported="true" />
 
+        <!-- Main screen -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
-        <!-- Foreground Service Definition -->
+        <!-- Mouse service -->
         <service
             android:name=".service.MouseStabilizerService"
             android:enabled="true"
